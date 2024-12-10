@@ -24,25 +24,30 @@ function App() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
     const rows = doc.querySelectorAll('table tr');
-
+  
     const bands = Array.from(rows).map((row, rowIndex) => {
-      const cells = row.querySelectorAll('td, th'); // Include <th> for headers
-      return Array.from(cells).map((cell, cellIndex) => ({
-        reportElement: {
-          '@': {
-            x: (cellIndex * 100).toString(),
-            y: (rowIndex * 20).toString(),
-            width: '100',
-            height: '20',
+      const cells = row.querySelectorAll('td, th'); 
+      return Array.from(cells).map((cell, cellIndex) => {
+        const cellText = cell.textContent.trim();
+        return {
+          reportElement: {
+            '@': {
+              x: (cellIndex * 80).toString(), // Giảm kích thước cột
+              y: (rowIndex * 20).toString(),
+              width: '80', // Giảm chiều rộng cột
+              height: '20',
+            },
           },
-        },
-        textElement: {
-          font: { '@': { fontName: 'Arial' } },
-        },
-        text: { '#text': cell.textContent },
-      }));
+          textElement: {
+            font: { '@': { fontName: 'Arial' } },
+          },
+          text: { '#text': cellText || ' ' },
+        };
+      });
     });
-
+  
+    const totalWidth = rows[0].querySelectorAll('td, th').length * 80; // Cập nhật chiều rộng cột
+  
     return {
       '@': {
         xmlns: 'http://jasperreports.sourceforge.net/jasperreports',
@@ -50,8 +55,8 @@ function App() {
         'xsi:schemaLocation':
           'http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd',
         name: 'Converted Table Report',
-        pageWidth: '595',
-        pageHeight: '842',
+        pageWidth: '595', // Chiều rộng giấy A4 dọc
+        pageHeight: '842', // Chiều cao giấy A4 dọc
         columnWidth: '515',
         leftMargin: '20',
         rightMargin: '20',
