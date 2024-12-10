@@ -20,43 +20,51 @@ function App() {
     }
   };
 
-  const convertHTMLTableToJRXML = (htmlContent) => {
+  const convertHTMLToJRXML = (htmlContent) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
-    const rows = doc.querySelectorAll('table tr');
-  
-    const bands = Array.from(rows).map((row, rowIndex) => {
-      const cells = row.querySelectorAll('td, th'); 
-      return Array.from(cells).map((cell, cellIndex) => {
-        const cellText = cell.textContent.trim();
-        return {
-          reportElement: {
-            '@': {
-              x: (cellIndex * 80).toString(), // Giảm kích thước cột
-              y: (rowIndex * 20).toString(),
-              width: '80', // Giảm chiều rộng cột
-              height: '20',
-            },
-          },
-          textElement: {
-            font: { '@': { fontName: 'Arial' } },
-          },
-          text: { '#text': cellText || ' ' },
-        };
-      });
+    
+    const elements = doc.body.childNodes;
+    const staticTextElements = [];
+
+    let yOffset = 0; // Biến để quản lý vị trí y
+
+    elements.forEach((element) => {
+      if (element.nodeName === 'H1' || element.nodeName === 'H2') {
+        const text = element.textContent.trim();
+        staticTextElements.push(createTextElement(text, yOffset));
+        yOffset += 20; // Tăng khoảng cách cho phần tử tiếp theo
+      } else if (element.nodeName === 'P') {
+        const text = element.textContent.trim();
+        staticTextElements.push(createTextElement(text, yOffset));
+        yOffset += 20;
+      } else if (element.nodeName === 'TABLE') {
+        const rows = element.querySelectorAll('tr');
+        rows.forEach((row, rowIndex) => {
+          const cells = row.querySelectorAll('td, th');
+          cells.forEach((cell, cellIndex) => {
+            const cellText = cell.textContent.trim();
+            staticTextElements.push(createTextElement(cellText, yOffset, cellIndex));
+          });
+          yOffset += 20; // Tăng khoảng cách cho hàng tiếp theo
+        });
+      }
     });
-  
-    const totalWidth = rows[0].querySelectorAll('td, th').length * 80; // Cập nhật chiều rộng cột
-  
+
+    // Nếu không có nội dung nào, thêm nội dung mặc định
+    if (staticTextElements.length === 0) {
+      staticTextElements.push(createTextElement('No content found, displaying default text.', yOffset));
+    }
+
     return {
       '@': {
         xmlns: 'http://jasperreports.sourceforge.net/jasperreports',
         'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
         'xsi:schemaLocation':
           'http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd',
-        name: 'Converted Table Report',
-        pageWidth: '595', // Chiều rộng giấy A4 dọc
-        pageHeight: '842', // Chiều cao giấy A4 dọc
+        name: 'Converted Report',
+        pageWidth: '595',
+        pageHeight: '842',
         columnWidth: '515',
         leftMargin: '20',
         rightMargin: '20',
@@ -66,19 +74,36 @@ function App() {
       detail: {
         band: {
           '@': { height: '800' },
-          staticText: bands.flat(),
+          staticText: staticTextElements,
         },
       },
     };
   };
 
+  const createTextElement = (text, yOffset, cellIndex = 0) => {
+    return {
+      reportElement: {
+        '@': {
+          x: (cellIndex * 80).toString(),
+          y: yOffset.toString(),
+          width: '80',
+          height: '20',
+        },
+      },
+      textElement: {
+        font: { '@': { fontName: 'Arial' } },
+      },
+      text: { '#text': text || ' ' },
+    };
+  };
+
   const handleGenerateJRXML = () => {
     if (!htmlContent) {
-      setError('Please upload an HTML file containing a table.');
+      setError('Please upload an HTML file.');
       return;
     }
 
-    const jrxml = convertHTMLTableToJRXML(htmlContent);
+    const jrxml = convertHTMLToJRXML(htmlContent);
     setJrxmlGenerated(jrxml);
     downloadJRXML(jrxml);
   };
