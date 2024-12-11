@@ -26,36 +26,31 @@ function App() {
     
     const elements = doc.body.childNodes;
     const staticTextElements = [];
-
-    let yOffset = 0; // Biến để quản lý vị trí y
-
+  
+    let yOffset = 0; 
+    let currentPageHeight = 800; 
+  
     elements.forEach((element) => {
       if (element.nodeName === 'H1' || element.nodeName === 'H2') {
         const text = element.textContent.trim();
         staticTextElements.push(createTextElement(text, yOffset));
-        yOffset += 20; // Tăng khoảng cách cho phần tử tiếp theo
+        yOffset += 20; 
       } else if (element.nodeName === 'P') {
         const text = element.textContent.trim();
         staticTextElements.push(createTextElement(text, yOffset));
         yOffset += 20;
       } else if (element.nodeName === 'TABLE') {
-        const rows = element.querySelectorAll('tr');
-        rows.forEach((row, rowIndex) => {
-          const cells = row.querySelectorAll('td, th');
-          cells.forEach((cell, cellIndex) => {
-            const cellText = cell.textContent.trim();
-            staticTextElements.push(createTextElement(cellText, yOffset, cellIndex));
-          });
-          yOffset += 20; // Tăng khoảng cách cho hàng tiếp theo
-        });
+        const rows = element.querySelectorAll('thead tr, tbody tr'); 
+       
+        console.log("Rows:", rows);
       }
     });
-
-    // Nếu không có nội dung nào, thêm nội dung mặc định
+  
+  
     if (staticTextElements.length === 0) {
       staticTextElements.push(createTextElement('No content found, displaying default text.', yOffset));
     }
-
+  
     return {
       '@': {
         xmlns: 'http://jasperreports.sourceforge.net/jasperreports',
@@ -64,8 +59,8 @@ function App() {
           'http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd',
         name: 'Converted Report',
         pageWidth: '595',
-        pageHeight: '842',
-        columnWidth: '515',
+         pageHeight: '842',
+          columnWidth: '515',
         leftMargin: '20',
         rightMargin: '20',
         topMargin: '20',
@@ -81,12 +76,13 @@ function App() {
   };
 
   const createTextElement = (text, yOffset, cellIndex = 0) => {
+    const cellWidth = 515 / 10; // Example: Divide the total width by the number of columns
     return {
       reportElement: {
         '@': {
-          x: (cellIndex * 80).toString(),
+          x: (cellIndex * cellWidth).toString(),
           y: yOffset.toString(),
-          width: '80',
+          width: cellWidth.toString(),
           height: '20',
         },
       },
